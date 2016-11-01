@@ -773,6 +773,20 @@ function test_intersection()
 
     @testintersect((@UnionAll T T), Type{Int8}, Type{Int8})
     @testintersect((@UnionAll T Tuple{T}), Tuple{Type{Int8}}, Tuple{Type{Int8}})
+
+    @testintersect((@UnionAll T Tuple{Union{Int,T}, Union{Vector{T},Vector{String}}}),
+                   Tuple{Integer, Vector{Int8}},
+                   Tuple{Union{Int,Int8}, Vector{Int8}})
+    @testintersect((@UnionAll T Tuple{Union{Int,T}, Union{Vector{T},Vector{String}}}),
+                   Tuple{Int8, Vector{String}},
+                   Tuple{Int8, Vector{String}})
+    @testintersect((@UnionAll T Tuple{Union{Int,T}, Union{Vector{T},Vector{String}}}),
+                   Tuple{Int, Vector{Int8}},
+                   Tuple{Int, Vector{Int8}})
+    @testintersect((            Tuple{Union{Int,String}, Union{Ref{Int}, Ref{String}}}),
+                   (@UnionAll T Tuple{T,                 Union{Ref{T},   Ref{String}}}),
+                   Union{Tuple{Int,    Union{Ref{Int},Ref{String}}},
+                         Tuple{String, Ref{String}}})
 end
 
 function test_intersection_properties()
@@ -788,8 +802,7 @@ function test_intersection_properties()
                 @test false
             end
             #@test isequal_type(I, _type_intersect(S,T))
-            @test issub(I, T)
-            if !issub(I, S)
+            if !issub(I, T) || !issub(I, S)
                 @show S
                 @show T
                 @show I
@@ -801,6 +814,11 @@ function test_intersection_properties()
         end
     end
 end
+
+jl_(x::ANY) = ccall(:jl_, Void, (Any,), x)
+
+zz = @UnionAll T Union{Tuple{T,Ref{T}}, Tuple{T,Ref{Int}}}
+jl_(_type_intersect( (@UnionAll Z Tuple{Z,Z}), Tuple{zz,zz} ))
 
 test_1()
 test_2()
